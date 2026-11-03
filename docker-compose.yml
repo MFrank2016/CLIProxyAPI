@@ -15,15 +15,21 @@ services:
     environment:
       DEPLOY: ${DEPLOY:-}
     ports:
-      - "8317:8317"
-      - "8085:8085"
-      - "1455:1455"
-      - "54545:54545"
-      - "51121:51121"
-      - "11451:11451"
+      - "127.0.0.1:8317:8317"
+      # Publish on loopback only; public traffic is served by Caddy (cpa.061995.xyz -> cli-proxy-api:8317).
+      - "127.0.0.1:8085:8085"
+      - "127.0.0.1:1455:1455"
+      - "127.0.0.1:54545:54545"
+      - "127.0.0.1:51121:51121"
+      - "127.0.0.1:11451:11451"
     volumes:
       - ${CLI_PROXY_CONFIG_PATH:-./config.yaml}:/CLIProxyAPI/config.yaml
       - ${CLI_PROXY_AUTH_PATH:-./auths}:/root/.cli-proxy-api
       - ${CLI_PROXY_LOG_PATH:-./logs}:/CLIProxyAPI/logs
       - ${CLI_PROXY_PLUGIN_PATH:-./plugins}:/CLIProxyAPI/plugins
     restart: unless-stopped
+    # Running as non-root was attempted and failed: the auth directory is /root/.cli-proxy-api and
+    # /CLIProxyAPI/static must be writable (root-owned image layers), so the process keeps running as root.
+    # user: "65532:65532"
+    security_opt:
+      - no-new-privileges:true
